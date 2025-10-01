@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach } from "vitest"
 import { submitContact } from "./submitContact"
 
 function generateTestEmail() {
@@ -7,7 +7,7 @@ function generateTestEmail() {
 }
 
 describe("submitContact()", () => {
-  it("saves contact to database", async () => {
+  it("saves contact to in-memory storage", async () => {
     const testData = {
       firstName: "John",
       lastName: "Doe",
@@ -18,6 +18,9 @@ describe("submitContact()", () => {
     const result = await submitContact(testData)
 
     expect(result).toHaveProperty("id")
-    expect(result.properties.email.email).toBe(testData.email)
+    expect(result.email).toBe(testData.email)
+    expect(result.firstName).toBe(testData.firstName)
+    expect(result.lastName).toBe(testData.lastName)
+    expect(result.phone).toBe(testData.phone)
   })
 })

@@ -1,18 +1,15 @@
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
-// import { PrismaClient } from "@prisma/client";
 import { appRouter } from "~/server/api/root";
-import { createContextInner } from "~/server/api/trpc";
+import { clearContacts } from "~/modules/contact/logic/submitContact";
 
 import type { AppRouter } from "~/server/api/root";
 import type { inferRouterInputs } from "@trpc/server";
 import type { ContactInput } from "~/modules/contact/logic/contactSchema";
 
-
-
-const createCaller = async () => {
-  const ctx = await createContextInner({ db: null });
+const createCaller = () => {
+  const ctx = { session: null };
   return appRouter.createCaller(ctx);
 };
 
@@ -27,18 +24,22 @@ const validTestData: ContactInput = {
 };
 
 describe("contactRouter integration", () => {
+  beforeEach(() => {
+    clearContacts();
+  });
 
   it("should submit contact successfully", async () => {
-    const caller = await createCaller();
+    const caller = createCaller();
     const result = await caller.contact.submit(validTestData);
 
     expect(result).toHaveProperty("id");
-    expect(result.properties.email.email).toBe(validTestData.email)
+    expect(result.email).toBe(validTestData.email);
+    expect(result.firstName).toBe(validTestData.firstName);
   });
 
 
   it("should reject an invalid contact submission", async () => {
-    const caller = await createCaller();
+    const caller = createCaller();
     const invalidInput: Partial<ContactSubmitInput> = {
       firstName: "Test",
       email: "test@example.com",
@@ -49,8 +50,9 @@ describe("contactRouter integration", () => {
 
 
   it("should throw a CONFLICT error for a duplicate contact", async () => {
-    const caller = await createCaller();
-    // await caller.contact.submit(validTestData);
+    const caller = createCaller();
+    // First submit the contact
+    await caller.contact.submit(validTestData);
     const duplicateData: ContactInput = {
       firstName: "Jane",
       lastName: "Doe",
